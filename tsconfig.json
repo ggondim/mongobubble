@@ -1,0 +1,29 @@
+{
+  "include": [
+    "./src/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "**/*.spec.ts",
+    "package.json"
+  ],
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "noImplicitAny": false,
+    "outDir": "./dist",
+    "declaration": true,
+    "inlineSourceMap": true,
+    "noEmitOnError": true,
+    "removeComments": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": [
+      "ES2021",
+    ],
+    "types": [
+      "node"
+    ],
+    "target": "ES2020"
+  }
+}
