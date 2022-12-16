@@ -1,7 +1,7 @@
 export type Falsy = undefined | null | false;
-export type ValidIndexSignature = string | number | symbol;
-export type Primitive = ValidIndexSignature | boolean;
-export type Complex = Primitive | Array<Primitive> | { [k: ValidIndexSignature]: unknown };
+export type PrimitiveValidIndexSignature = string | number | symbol;
+export type Primitive = PrimitiveValidIndexSignature | boolean;
+export type Complex = Primitive | Array<Primitive> | { [k: PrimitiveValidIndexSignature]: unknown };
 export type FalsyOrLiteral = Falsy | Primitive;
 
 export const isFalsyOrSpaces = (i: FalsyOrLiteral) => {
@@ -32,4 +32,16 @@ export class ClonableType<T> {
   constructor(obj?: Partial<T>) {
     if (obj) Object.assign(this, obj);
   }
+}
+
+export function getMethods(obj): string[] {
+  const properties = new Set();
+  let currentObj = obj;
+  do {
+    Object.getOwnPropertyNames(currentObj).map(item => properties.add(item));
+  // eslint-disable-next-line no-cond-assign
+  } while ((currentObj = Object.getPrototypeOf(currentObj)));
+  return [...properties.keys()]
+    .filter(item => typeof obj[item as PrimitiveValidIndexSignature] === 'function')
+    .map(i => i.toString());
 }

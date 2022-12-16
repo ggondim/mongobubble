@@ -25,7 +25,6 @@ module.exports = {
     'airbnb-base',
     'airbnb-typescript/base',
     'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:eslint-comments/recommended',
   ],
   parser: "@typescript-eslint/parser",
@@ -37,8 +36,6 @@ module.exports = {
     "console": process.env.NODE_ENV === 'development' ? 'readonly' : 'off',
   },
   rules: {
-    "@typescript-eslint/no-unsafe-member-access": "warn",
-    "@typescript-eslint/no-unsafe-call": "warn",
     strict: 'off',
     'prefer-destructuring': 'off',
     'class-methods-use-this': 'off',
@@ -52,9 +49,6 @@ module.exports = {
     // allow optionalDependencies
     'import/no-extraneous-dependencies': ['error', {
       optionalDependencies: ['test/unit/index.js'],
-    }],
-    "import/no-import-module-exports": ["error", {
-      "exceptions": ["**/*/*.ts"]
     }],
     // disallow reassignment of function parameters
     // disallow parameter object manipulation except for specific exclusions
