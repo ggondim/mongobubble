@@ -26,6 +26,15 @@ export type OnBeforeDeleteHook = (
   options?: Document,
 ) => void | Promise<void | Complex>;
 
+export type OnBeforeListHook = (
+  pipeline?: Document[],
+  postPipeline?: Document[],
+) => void | Promise<void | Complex>;
+
+export type OnBeforeGetHook = (
+  id: unknown,
+) => void | Promise<void | Complex>;
+
 export type OnAfterInsertHook = (
   result: InsertOneOrManyResult,
   document: Document,
@@ -37,11 +46,23 @@ export type OnAfterPatchHook = (
   mongoUpdate: Document,
 ) => void | Promise<void>;
 
-export type OnAfterReplaceHook = (result: UpdateResult, document: Document) => void | Promise<void>;
+export type OnAfterReplaceHook = (
+  result: UpdateResult,
+  documentOrDocuments: Document | Document[],
+) => void | Promise<void>;
 
 export type OnAfterDeleteHook = (
   result: DeleteResult,
   idOrDocument: ObjectId | Primitive | Document,
+) => void | Promise<void>;
+
+export type OnAfterListHook = (
+  finalPipeline: Document[],
+  result: Document[],
+) => void | Promise<void>;
+
+export type OnAfterGetHook = (
+  result: Document,
 ) => void | Promise<void>;
 
 // #endregion
@@ -53,9 +74,13 @@ export interface IRepositoryPlugin {
   onBeforePatch: undefined | OnBeforePatchHook;
   onBeforeReplace: undefined | OnBeforeReplaceHook;
   onBeforeDelete: undefined | OnBeforeDeleteHook;
+  onBeforeList: undefined | OnBeforeListHook;
+  onBeforeGet: undefined | OnBeforeGetHook;
 
   onAfterInsert: undefined | OnAfterInsertHook;
   onAfterPatch: undefined | OnAfterPatchHook;
   onAfterReplace: undefined | OnAfterReplaceHook;
   onAFterDelete: undefined | OnAfterDeleteHook;
+  onAfterList: undefined | OnBeforeListHook;
+  onAfterGet: undefined | OnAfterGetHook;
 }

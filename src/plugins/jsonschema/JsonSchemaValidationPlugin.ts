@@ -44,8 +44,6 @@ export default class JsonSchemaValidationPlugin<TEntity>
     }
   }
 
-  onBeforePatch: undefined;
-
   async onBeforeReplace(document: Document): Promise<void | Complex> {
     if (!this.schema || !this.ajv) return;
 
@@ -54,6 +52,12 @@ export default class JsonSchemaValidationPlugin<TEntity>
       throw new ValidationError(this.ajv.errors);
     }
   }
+
+  onBeforePatch: undefined;
+
+  onAfterGet: undefined;
+
+  onBeforeGet: undefined;
 
   onBeforeDelete: undefined;
 
@@ -64,4 +68,8 @@ export default class JsonSchemaValidationPlugin<TEntity>
   onAfterReplace: undefined;
 
   onAFterDelete: undefined;
+
+  onBeforeList: undefined;
+
+  onAfterList: undefined;
 }

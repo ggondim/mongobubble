@@ -1,6 +1,6 @@
 import { Document, ObjectId } from 'bson';
 import {
-  Collection, Db, OptionalUnlessRequiredId, Filter, UpdateResult, DeleteResult,
+  Collection, Db, OptionalUnlessRequiredId, Filter, UpdateResult, DeleteResult, InferIdType,
 } from 'mongodb';
 import { IRepositoryPlugin } from './IRepositoryPlugin';
 import { JsonPatchOperation } from './MongoDbUtils';
@@ -8,6 +8,7 @@ import { Primitive } from './Utils';
 import PreventedResult from './PreventedResult';
 
 export default interface IRepository<TEntity> {
+  entityConstructor: (obj: Partial<TEntity>) => TEntity;
 
   collection: Collection<TEntity>;
 
@@ -56,5 +57,14 @@ export default interface IRepository<TEntity> {
   deleteOne(
     idOrDocument: ObjectId | Primitive | Filter<TEntity>,
   ): Promise<DeleteResult | PreventedResult>;
+
+  list<TResult = TEntity>(
+    pipeline: Document[],
+    postPipeline: Document[],
+  ): Promise<TResult[] | PreventedResult>;
+
+  get(
+    id: InferIdType<TEntity>,
+  ): Promise<TEntity | PreventedResult>;
   // eslint-disable-next-line semi
 }

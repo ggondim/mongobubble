@@ -1,38 +1,34 @@
 import { Document, ObjectId } from 'bson';
-import { Filter, NumericType, UpdateFilter } from 'mongodb';
+import {
+  Filter,
+  MatchKeysAndValues,
+  NumericType,
+  UpdateFilter,
+  UpdateResult,
+} from 'mongodb';
+import toMongoDbUpdate from 'jsonpatch-to-mongodb';
 import { RepositoryPlugin } from '../../RepositoryPlugin';
 import {
-  EntityWithLifecycle, LifecycleStages,
+  EntityWithLifecycle, LifecycleStages, LifecycleTimestamps,
 } from './EntityWithLifecycle';
 import { JsonPatchOperation } from '../../MongoDbUtils';
 import {
   IRepositoryPlugin,
-  OnAfterDeleteHook,
-  OnAfterInsertHook,
-  OnAfterPatchHook,
-  OnAfterReplaceHook,
 } from '../../IRepositoryPlugin';
 import IRepository from '../../IRepository';
 import { Complex, Primitive } from '../../Utils';
 
-function ensureMetadata(document: Document, options?: Document) {
-  EntityWithLifecycle.initializeMetadata(document);
-
-  if (options && options.author) document._meta.events.created.author = options.author;
-  if (options && options.comments) document._meta.events.created.comments = options.comments;
-  if (options && options.reason) document._meta.events.created.reason = options.reason;
-}
-
-function ensureOneOrMany(
+function setMetadata(
+  event: LifecycleTimestamps,
   documentOrDocuments: Document | Document[],
   options?: Document,
 ) {
   if (Array.isArray(documentOrDocuments)) {
     return documentOrDocuments.forEach(document => {
-      ensureMetadata(document, options);
+      EntityWithLifecycle.setEvent(event, document, options);
     });
   }
-  ensureMetadata(documentOrDocuments, options);
+  return EntityWithLifecycle.setEvent(event, documentOrDocuments, options);
 }
 
 export type LifecyclePluginOptions = {
@@ -54,11 +50,22 @@ export default class LifecyclePlugin<TEntity>
     this.softDelete = options.softDelete || true;
   }
 
+  onBeforeList(
+    pipeline: Document[],
+    postPipeline?: Document[],
+  ): void {
+    (() => postPipeline)();
+    if (pipeline.find(x => x.$match && x.$match['_meta.status'])) return;
+    pipeline.push({
+      $match: { '_meta.status': LifecycleStages.PUBLISHED },
+    });
+  }
+
   async onBeforeInsert(
     documentOrDocuments: Document | Document[],
     options?: Document,
   ): Promise<void | Complex> {
-    ensureOneOrMany(documentOrDocuments, options);
+    setMetadata(LifecycleTimestamps.created, documentOrDocuments, options);
   }
 
   async onBeforePatch(
@@ -68,15 +75,48 @@ export default class LifecyclePlugin<TEntity>
   ): Promise<void | Complex> {
     (() => patch)();
     (() => options)();
+
+    // version increment
     if (!mongoUpdate.$inc) mongoUpdate.$inc = {};
     (mongoUpdate.$inc as Record<string, NumericType>)['_meta.version'] = 1;
+
+    // updated timestamp event
+    if (!mongoUpdate.$set) mongoUpdate.$set = {} as MatchKeysAndValues<TEntity>;
+    const ops = EntityWithLifecycle.setEvent(
+      LifecycleTimestamps.updated,
+      {},
+      options,
+    );
+    const mongoUpdateSet = toMongoDbUpdate(ops) as UpdateFilter<TEntity>;
+    mongoUpdate.$set = {
+      ...mongoUpdate.$set,
+      ...mongoUpdateSet as MatchKeysAndValues<TEntity>,
+    };
   }
 
   async onBeforeReplace(
     documentOrDocuments: Document | Document[],
     options?: Document,
   ): Promise<void | Complex> {
-    ensureOneOrMany(documentOrDocuments, options);
+    setMetadata(LifecycleTimestamps.updated, documentOrDocuments, options);
+
+    // get the current version of documents - makes the replace method to have 3 operations
+    const documents = Array.isArray(documentOrDocuments)
+      ? documentOrDocuments
+      : [documentOrDocuments];
+    const versions = await this.repository.collection.find({
+      _id: {
+        $in: documents.map(x => x._id),
+      },
+    }, {
+      projection: { '_meta.version': 1 },
+    }).toArray();
+    versions.forEach(version => {
+      // TODO: this doesn't have a good performance, but it's the only way instead sorting the
+      // documents array - maybe convert to a hashmap is better, but every solution iterates
+      const document = documents.find(x => x._id === version._id) as Document;
+      document._meta.version = (version as Document)._meta.version;
+    });
   }
 
   async onBeforeDelete(
@@ -97,11 +137,30 @@ export default class LifecyclePlugin<TEntity>
     }
   }
 
-  onAfterInsert: OnAfterInsertHook;
+  async onAfterReplace(
+    result: UpdateResult,
+    documentOrDocuments: Document | Document[],
+  ): Promise<void> {
+    (() => result)();
+    // TODO: verify the updated documents before increment version
+    const documents = Array.isArray(documentOrDocuments)
+      ? documentOrDocuments
+      : [documentOrDocuments];
+    // calling patchMany already triggers the onBeforePatch hook, that increments version
+    await this.repository.patchMany({
+      _ids: { $in: documents.map(x => x._id) },
+    }, [] as JsonPatchOperation[]);
+  }
 
-  onAfterPatch: OnAfterPatchHook;
+  onBeforeGet: undefined;
 
-  onAfterReplace: OnAfterReplaceHook;
+  onAfterGet: undefined;
 
-  onAFterDelete: OnAfterDeleteHook;
+  onAfterInsert: undefined;
+
+  onAfterPatch: undefined;
+
+  onAFterDelete: undefined;
+
+  onAfterList: undefined;
 }
