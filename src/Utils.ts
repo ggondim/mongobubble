@@ -1,7 +1,7 @@
 export type Falsy = undefined | null | false;
 export type PrimitiveValidIndexSignature = string | number | symbol;
 export type Primitive = PrimitiveValidIndexSignature | boolean;
-export type Complex = Primitive | Array<Primitive> | { [k: PrimitiveValidIndexSignature]: unknown };
+export type Complex = Primitive | Array<Primitive> | { [k: PrimitiveValidIndexSignature]: Complex };
 export type FalsyOrLiteral = Falsy | Primitive;
 
 export const isFalsyOrSpaces = (i: FalsyOrLiteral) => {

@@ -1,6 +1,6 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable max-classes-per-file */
-import { Document, ObjectId, Timestamp } from 'bson';
+import { ObjectId } from 'bson';
 import { Complex } from './Utils';
 
 /**
@@ -80,83 +80,12 @@ export class ObjectIdEntity<T extends IEntity> extends ClonableEntity<T, ObjectI
 export function isEntity<Identity>(o: unknown): o is IEntity<Identity> {
   return Object.prototype.hasOwnProperty.call(o, '_id') as boolean;
 }
-
-export enum LifecycleTimestamps {
-  created = 'created',
-  updated = 'updated',
-  published = 'published',
-  archived = 'archived',
+export interface IEntityWithExternalIds {
+  _eids: ExternalIds;
 }
-
-export enum LifecycleStages {
-  DRAFT = 'DRAFT',
-  PUBLISHED = 'PUBLISHED',
-  ARCHIVED = 'ARCHIVED',
-}
-
-export type TimestampEventDetails = {
-  author?: string,
-  comments?: string,
-  reason?: string,
-};
-
-export type TimestampEvent = {
-  timestamp: Date
-} & TimestampEventDetails;
-
-export type LifecycleMetadata = {
-  events: {
-    [k in LifecycleTimestamps]?: TimestampEvent
-  },
-  status: LifecycleStages,
-};
 
 export type ExternalIds = {
   [realm: string]: {
     [type: string]: Complex,
   },
 };
-
-export type OriginMetadata = {
-  realm: string,
-  type: string,
-};
-
-export type EntityMetadata = Document & LifecycleMetadata & {
-  version: number,
-  origin?: OriginMetadata
-};
-
-export interface IEntityWithMetadata {
-  _meta: EntityMetadata;
-}
-
-export interface IEntityWithExternalIds {
-  _eids: ExternalIds;
-}
-
-export class EntityWithLifecycle<
-  T extends IEntity<Identity>,
-  Identity = ObjectId,
-> extends ClonableEntity<T, Identity> implements IEntityWithMetadata {
-  _meta: EntityMetadata;
-
-  constructor(obj?: Partial<T> & IEntityWithMetadata, {
-    identityFactory = null,
-  } = {} as {
-    identityFactory: () => Identity, obj?: Partial<T>,
-  }) {
-    super(identityFactory);
-    if (!obj) {
-      this._meta = {
-        version: 1,
-        status: LifecycleStages.DRAFT,
-        events: {
-          created: {
-            timestamp: new Date(),
-          },
-        },
-      };
-    }
-  }
-}
