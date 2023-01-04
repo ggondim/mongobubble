@@ -41,7 +41,7 @@ describe('MongoRepository', () => {
     const repository = newUserRepository();
 
     expect(repository.db.databaseName).toBe('mongobubble');
-    expect(repository.plugins.length).toBe(2);
+    expect(repository.plugins.length).toBe(1);
   });
 
   test('wrong initialization', () => {

@@ -7,11 +7,9 @@ import { IRepositoryPlugin } from './IRepositoryPlugin';
 import IRepository from './IRepository';
 import { Complex } from './Utils';
 import PreventedResult from './PreventedResult';
-import LifecyclePlugin from './plugins/lifecycle/LifecyclePlugin';
 import JsonSchemaValidationPlugin from './plugins/jsonschema/JsonSchemaValidationPlugin';
 
 export enum DefaultPlugins {
-  LifecyclePlugin = 'LifecyclePlugin',
   JsonSchemaValidationPlugin = 'JsonSchemaValidationPlugin',
 }
 
@@ -24,9 +22,6 @@ export function initializePlugins<TEntity>(
   for (let i = 0; i < plugins.length; i++) {
     const pluginName = plugins[i];
     switch (pluginName) {
-      case DefaultPlugins.LifecyclePlugin:
-        result.push(new LifecyclePlugin(repository, options));
-        break;
       case DefaultPlugins.JsonSchemaValidationPlugin:
         result.push(new JsonSchemaValidationPlugin(repository, options));
         break;
