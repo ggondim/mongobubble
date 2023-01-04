@@ -1,6 +1,6 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable max-classes-per-file */
-import { ObjectId } from 'bson';
+import { Document, ObjectId } from 'bson';
 import { Complex } from './Utils';
 
 /**
@@ -25,7 +25,7 @@ export interface IEntity<Identity = ObjectId> {
    * @type {Record<string, any>}
    * @memberof IEntity
    */
-  _: Record<string, unknown>;
+  _: Document;
 }
 
 /**
@@ -55,7 +55,7 @@ export class ClonableEntity<T extends IEntity<Identity>, Identity> implements IE
     }
   }
 
-  _: Record<string, unknown>;
+  _: Document;
 }
 
 /**
@@ -76,19 +76,53 @@ export class ObjectIdEntity<T extends IEntity> extends ClonableEntity<T, ObjectI
   }
 }
 
+/**
+ * A constructor with an object argument to optionally clone from.
+ * @export
+ * @interface ClonableConstructor
+ * @template TEntity Type of instance created from constructor.
+ */
 export interface ClonableConstructor<TEntity> {
   new(obj?: Partial<TEntity>): TEntity;
 }
 
+/**
+ * Determines wheter an object is an entity or not
+ * @param o object to check
+ * @returns true if is an entity
+ */
 export function isEntity<Identity>(o: unknown): o is IEntity<Identity> {
   return Object.prototype.hasOwnProperty.call(o, '_id') as boolean;
 }
+
+/**
+ * Represents an entity that has external identities (ie: it represents a person inside its domain
+ * but a "contact" inside another domain)
+ * @export
+ * @interface IEntityWithExternalIds
+ */
 export interface IEntityWithExternalIds {
-  _eids: ExternalIds;
+  _eids?: ExternalIds;
 }
 
+/**
+ * External IDs object
+ * @example {
+ *  google: {
+ *    user: 'id'
+ *  }
+ * }
+ */
 export type ExternalIds = {
+  /**
+   * realm: the domain of the external IDs
+   * @example 'google'
+   */
   [realm: string]: {
+    /**
+     * type: the entity that the external ID represents inside the realm
+     * @example 'user'
+     */
     [type: string]: Complex,
   },
 };
