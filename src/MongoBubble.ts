@@ -50,7 +50,7 @@ export default class MongoBubble<
       {
         $match: { '_meta.status': LifecycleStages.DRAFT },
       },
-      postPipeline,
+      ...postPipeline,
     ]);
   }
 
@@ -86,7 +86,7 @@ export default class MongoBubble<
       {
         $match: { '_meta.status': LifecycleStages.ARCHIVED },
       },
-      postPipeline,
+      ...postPipeline,
     ];
 
     const preventResult = await callPluginHooks<OnBeforeListHook>(
@@ -140,7 +140,7 @@ export default class MongoBubble<
       {
         $match: { '_meta.status': { $exists: true } },
       },
-      postPipeline,
+      ...postPipeline,
     ];
 
     const preventResult = await callPluginHooks<OnBeforeListHook>(

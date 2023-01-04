@@ -44,7 +44,7 @@ export async function callPluginHooks<T>(
   const preventedReasons = [];
   const filteredPlugins = filterHooks(hookName, plugins);
   for (let i = 0; i < filteredPlugins.length; i++) {
-    const plugin = plugins[i];
+    const plugin = filteredPlugins[i];
     const hook = plugin[hookName] as T;
     const preventReason = await callback(hook, plugin);
     // if true, some plugin prevented the operation

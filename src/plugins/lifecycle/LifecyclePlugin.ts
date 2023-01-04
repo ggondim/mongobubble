@@ -32,7 +32,7 @@ function setMetadata(
 }
 
 export type LifecyclePluginOptions = {
-  softDelete: true,
+  softDelete?: boolean,
 };
 
 export default class LifecyclePlugin<TEntity>
