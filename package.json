@@ -17,7 +17,7 @@
     "release-rc": "npm run release -- --prerelease rc",
     "release": "npx standard-version",
     "hook:commit-msg": "npx --no -- commitlint --edit $1",
-    "hook:pre-commit": "npm run lint; npm run ts:lint",
+    "hook:pre-commit": "npm run lint; npm run ts:lint; npm run test",
     "lint": "eslint ./src/*.ts --format stylish",
     "ts:lint": "tsc --noEmit",
     "ts:build": "rimraf dist; mkdir dist; tsc",
