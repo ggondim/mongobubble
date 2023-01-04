@@ -38,11 +38,12 @@ import
   OnBeforeReplaceHook,
 }
   from './IRepositoryPlugin';
-import { Primitive } from './Utils';
+import { LogLevel, Primitive } from './Utils';
 import { DefaultPlugins, callPluginHooks, initializePlugins } from './RepositoryPluginUtils';
 import IRepository from './IRepository';
 import PreventedResult from './PreventedResult';
 import IConnectionManager from './IConnectionManager';
+import { ClonableConstructor } from './Entity';
 // #endregion
 
 export type MongoRepositoryOptions = {
@@ -51,10 +52,12 @@ export type MongoRepositoryOptions = {
   db: string | Db,
   client?: MongoClient,
   manager?: IConnectionManager,
+  logLevel?: LogLevel,
+  collectionName?: string,
 };
 
 export default class MongoRepository<TEntity> implements IRepository<TEntity> {
-  entityConstructor: (obj: Partial<TEntity>) => TEntity;
+  EntityClass: ClonableConstructor<TEntity>;
 
   collection: Collection<TEntity>;
 
@@ -70,17 +73,26 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
 
   protected readonly manager: IConnectionManager;
 
+  logLevel: LogLevel;
+
   constructor(
-    entityConstructor: (obj: Partial<TEntity>) => TEntity,
-    collectionName: string,
-    options?: Document & MongoRepositoryOptions,
+    entityClass: ClonableConstructor<TEntity>,
+    options: Document & MongoRepositoryOptions,
   ) {
     const defPlugins = options.overrideDefaultPlugins || DefaultPlugins;
 
-    this.plugins = [
-      ...((options.plugins || []) as IRepositoryPlugin[]),
-      ...initializePlugins(this, Object.keys(defPlugins) as DefaultPlugins[]),
-    ];
+    const staticEntity = entityClass as Document;
+
+    if (!options.collectionName && !staticEntity.COLLECTION) {
+      throw new Error('[MongoRepository] You shold specify a class with a static `COLLECTION` '
+        + 'property or a `collectionName` option.');
+    }
+
+    this.EntityClass = entityClass;
+    this.collectionName = options.collectionName || staticEntity.COLLECTION;
+    this.client = options.client;
+    this.manager = options.manager;
+    this.logLevel = options.logLevel || LogLevel.Warn;
 
     if (typeof options.db !== 'string') {
       this.db = options.db;
@@ -88,10 +100,14 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
       this.dbName = options.db;
     }
 
-    this.entityConstructor = entityConstructor;
-    this.collectionName = collectionName;
-    this.client = options.client;
-    this.manager = options.manager;
+    this.plugins = [
+      ...((options.plugins || []) as IRepositoryPlugin[]),
+      ...initializePlugins(
+        this,
+        Object.keys(defPlugins) as DefaultPlugins[],
+        options,
+      ),
+    ];
   }
 
   private async ensureDbAndCollection(): Promise<void> {
@@ -101,7 +117,7 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
       return;
     }
     if (!this.client && !this.manager) {
-      throw new Error('MongoRepository was initialized with `db` option but without `client` or '
+      throw new Error('[MongoRepository] was initialized with `db` option but without `client` or '
         + '`manager`');
     }
     const client = this.client || await this.manager.getClient();
@@ -134,9 +150,9 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     await this.ensureDbAndCollection();
 
     const preventResult = await callPluginHooks<OnBeforeInsertHook>(
-      'onBeforeInsertHook',
+      'onBeforeInsert',
       this.plugins,
-      async hook => hook(documentOrDocuments, options),
+      async (hook, plugin) => hook.bind(plugin, documentOrDocuments, options)(),
     );
     if (preventResult) return preventResult;
 
@@ -146,9 +162,9 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     const result = await promise;
 
     await callPluginHooks<OnAfterInsertHook>(
-      'onAfterInsertHook',
+      'onAfterInsert',
       this.plugins,
-      async hook => hook(result, documentOrDocuments),
+      async (hook, plugin) => hook.bind(plugin, result, documentOrDocuments)(),
     );
 
     if (Array.isArray(documentOrDocuments)) {
@@ -205,18 +221,18 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
       : { $set: operationsOrDocumentPatch as MatchKeysAndValues<TEntity> };
 
     const preventResult = await callPluginHooks<OnBeforePatchHook<TEntity>>(
-      'onBeforePatchHook',
+      'onBeforePatch',
       this.plugins,
-      async hook => hook(jsonPatchOperations, updateFilter),
+      async (hook, plugin) => hook.bind(plugin, jsonPatchOperations, updateFilter)(),
     );
     if (preventResult) return preventResult;
 
     const result = await this.collection[oneOrMany](filter, updateFilter);
 
     await callPluginHooks<OnAfterPatchHook>(
-      'onAfterPatchHook',
+      'onAfterPatch',
       this.plugins,
-      async hook => hook(result, jsonPatchOperations, updateFilter),
+      async (hook, plugin) => hook.bind(plugin, result, jsonPatchOperations, updateFilter)(),
     );
 
     return result;
@@ -228,18 +244,18 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     await this.ensureDbAndCollection();
 
     const preventResult = await callPluginHooks<OnBeforeReplaceHook>(
-      'onBeforeReplaceHook',
+      'onBeforeReplace',
       this.plugins,
-      async hook => hook(document),
+      async (hook, plugin) => hook.bind(plugin, document)(),
     );
     if (preventResult) return preventResult;
 
     const result = await this.collection.replaceOne({ _id: document._id }, document);
 
     await callPluginHooks<OnAfterReplaceHook>(
-      'onAfterReplaceHook',
+      'onAfterReplace',
       this.plugins,
-      async hook => hook(result as UpdateResult, document),
+      async (hook, plugin) => hook.bind(plugin, result as UpdateResult, document)(),
     );
 
     return result as UpdateResult;
@@ -250,12 +266,13 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
   ): Promise<DeleteResult | PreventedResult> {
     await this.ensureDbAndCollection();
 
+    // TODO: the assertion of type object could be a mistake because there are IDs of object type
     const isId = ObjectId.isValid(idOrDocument.toString()) || typeof idOrDocument !== 'object';
 
     const preventResult = await callPluginHooks<OnBeforeDeleteHook>(
-      'onBeforeDeleteHook',
+      'onBeforeDelete',
       this.plugins,
-      async hook => hook(idOrDocument),
+      async (hook, plugin) => hook.bind(plugin, idOrDocument)(),
     );
     if (preventResult) return preventResult;
 
@@ -265,15 +282,15 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     const result = await this.collection.deleteOne(filter);
 
     await callPluginHooks<OnAfterDeleteHook>(
-      'onAfterDeleteHook',
+      'onAfterDelete',
       this.plugins,
-      async hook => hook(result, idOrDocument),
+      async (hook, plugin) => hook.bind(plugin, result, idOrDocument)(),
     );
 
     return result;
   }
 
-  // TODO: separate list and query methods (query not returns a constructed entity)
+  // TODO: separate list and query methods (query not returns a constructed entity but run hooks)
   async list<TResult = TEntity>(
     pipeline = [] as Document[],
     postPipeline = [] as Document[],
@@ -281,9 +298,9 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     await this.ensureDbAndCollection();
 
     const preventResult = await callPluginHooks<OnBeforeListHook>(
-      'onBeforeListHook',
+      'onBeforeList',
       this.plugins,
-      async hook => hook(pipeline),
+      async (hook, plugin) => hook.bind(plugin, pipeline)(),
     );
     if (preventResult) return preventResult;
 
@@ -291,9 +308,9 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     const result = await this.collection.aggregate(finalPipeline).toArray();
 
     await callPluginHooks<OnAfterListHook>(
-      'onAfterListHook',
+      'onAfterList',
       this.plugins,
-      async hook => hook(finalPipeline, result),
+      async (hook, plugin) => hook.bind(plugin, finalPipeline, result)(),
     );
 
     return result as TResult[];
@@ -301,26 +318,26 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
 
   async get(
     id: InferIdType<TEntity>,
-  ): Promise<TEntity | PreventedResult> {
+  ): Promise<TEntity | null> {
     await this.ensureDbAndCollection();
 
-    const preventResult = await callPluginHooks<OnBeforeGetHook>(
-      'onBeforeGetHook',
+    await callPluginHooks<OnBeforeGetHook>(
+      'onBeforeGet',
       this.plugins,
-      async hook => hook(id),
+      async (hook, plugin) => hook.bind(plugin, id)(),
     );
-    if (preventResult) return preventResult;
 
     const result = await this.collection.findOne(({
       _id: id,
     } as unknown) as Filter<TEntity>);
 
     await callPluginHooks<OnAfterGetHook>(
-      'onAfterGetHook',
+      'onAfterGet',
       this.plugins,
-      async hook => hook(result),
+      async (hook, plugin) => hook.bind(plugin, result)(),
     );
 
-    return this.entityConstructor(result as Partial<TEntity>);
+    if (!result) return null;
+    return new this.EntityClass(result as Partial<TEntity>);
   }
 }

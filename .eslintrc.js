@@ -4,7 +4,7 @@ module.exports = {
     '/.vscode/**/*',
     '/build/**/*',
     '/dist/**/*',
-    '/**/*.test.js',
+    '/**/*.test.ts',
     '/node_modules/**/*',
     '.eslintrc.js',
     '/src/index.ts'

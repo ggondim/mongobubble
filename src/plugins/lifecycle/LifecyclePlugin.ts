@@ -16,7 +16,7 @@ import {
   IRepositoryPlugin,
 } from '../../IRepositoryPlugin';
 import IRepository from '../../IRepository';
-import { Complex, Primitive } from '../../Utils';
+import { Complex, Primitive, equals } from '../../Utils';
 
 function setMetadata(
   event: LifecycleTimestamps,
@@ -47,7 +47,7 @@ export default class LifecyclePlugin<TEntity>
     options: Partial<LifecyclePluginOptions> = {},
   ) {
     super(repository, options);
-    this.softDelete = options.softDelete || true;
+    this.softDelete = typeof options.softDelete !== 'undefined' ? options.softDelete : true;
   }
 
   onBeforeList(
@@ -90,7 +90,7 @@ export default class LifecyclePlugin<TEntity>
     const mongoUpdateSet = toMongoDbUpdate(ops) as UpdateFilter<TEntity>;
     mongoUpdate.$set = {
       ...mongoUpdate.$set,
-      ...mongoUpdateSet as MatchKeysAndValues<TEntity>,
+      ...mongoUpdateSet.$set as MatchKeysAndValues<TEntity>,
     };
   }
 
@@ -114,7 +114,8 @@ export default class LifecyclePlugin<TEntity>
     versions.forEach(version => {
       // TODO: this doesn't have a good performance, but it's the only way instead sorting the
       // documents array - maybe convert to a hashmap is better, but every solution iterates
-      const document = documents.find(x => x._id === version._id) as Document;
+      const document = documents.find(x => equals(x._id, version._id)) as Document;
+      EntityWithLifecycle.initializeMetadata(document);
       document._meta.version = (version as Document)._meta.version;
     });
   }
@@ -148,8 +149,8 @@ export default class LifecyclePlugin<TEntity>
       : [documentOrDocuments];
     // calling patchMany already triggers the onBeforePatch hook, that increments version
     await this.repository.patchMany({
-      _ids: { $in: documents.map(x => x._id) },
-    }, [] as JsonPatchOperation[]);
+      _id: { $in: documents.map(x => x._id) },
+    }, {});
   }
 
   onBeforeGet: undefined;

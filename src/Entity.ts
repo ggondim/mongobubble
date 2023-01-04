@@ -48,11 +48,10 @@ export class ClonableEntity<T extends IEntity<Identity>, Identity> implements IE
   constructor(identityFactory: () => Identity, obj?: Partial<T>) {
     if (obj) Object.assign(this, obj);
     if (obj && !obj._id) {
-      if (identityFactory) {
-        this._id = identityFactory();
-      } else {
-        throw new Error('Missing object _id for cloning');
-      }
+      throw new Error('Missing object _id for cloning');
+    }
+    if (!obj && identityFactory) {
+      this._id = identityFactory();
     }
   }
 
@@ -75,6 +74,10 @@ export class ObjectIdEntity<T extends IEntity> extends ClonableEntity<T, ObjectI
   constructor(obj?: Partial<T>) {
     super(null, obj);
   }
+}
+
+export interface ClonableConstructor<TEntity> {
+  new(obj?: Partial<TEntity>): TEntity;
 }
 
 export function isEntity<Identity>(o: unknown): o is IEntity<Identity> {

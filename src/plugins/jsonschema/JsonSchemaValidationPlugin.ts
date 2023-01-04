@@ -3,11 +3,12 @@ import Ajv, { ValidationError } from 'ajv';
 import IRepository from '../../IRepository';
 import { IRepositoryPlugin } from '../../IRepositoryPlugin';
 import { RepositoryPlugin } from '../../RepositoryPlugin';
-import { Complex } from '../../Utils';
+import { Complex, LogLevel } from '../../Utils';
 
 export type JsonSchemaValidationOptions = {
   ajv?: Ajv,
   schema?: object,
+  logLevel?: LogLevel,
 };
 
 export default class JsonSchemaValidationPlugin<TEntity>
@@ -19,13 +20,15 @@ export default class JsonSchemaValidationPlugin<TEntity>
 
   ajv: Ajv;
 
+  logLevel: LogLevel;
+
   constructor(
     repository: IRepository<TEntity>,
     options: Partial<JsonSchemaValidationOptions> = {},
   ) {
     super(repository, options);
 
-    if (!options.schema && console) {
+    if (!options.schema && this.logLevel > LogLevel.Info && console) {
       // eslint-disable-next-line no-console
       console.warn('[mongobuble][JsonSchemaValidationPlugin] Schema was not specified. Consider'
         + 'passing a schema to validate operations or explictly disabling the plugin.');
@@ -33,6 +36,7 @@ export default class JsonSchemaValidationPlugin<TEntity>
 
     this.schema = options.schema;
     this.ajv = options.ajv || new Ajv();
+    this.logLevel = options.logLevel;
   }
 
   async onBeforeInsert(document: Document): Promise<void | Complex> {

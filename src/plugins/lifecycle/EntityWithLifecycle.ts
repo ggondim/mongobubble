@@ -53,8 +53,10 @@ export interface IEntityWithMetadata<Identity = ObjectId> {
 export class EntityWithLifecycle<
   T extends IEntity<Identity>,
   Identity = ObjectId,
-> extends ClonableEntity<T, Identity> implements IEntityWithMetadata<Identity> {
+  > extends ClonableEntity<T, Identity> implements IEntityWithMetadata<Identity> {
   _meta: EntityMetadata<Identity>;
+
+  _alive = true as const;
 
   constructor(obj?: Partial<T>, {
     identityFactory = null,

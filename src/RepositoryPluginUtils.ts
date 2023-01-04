@@ -37,22 +37,21 @@ export function initializePlugins<TEntity>(
   return result;
 }
 
-export function getPluginHooks<THook>(hook: string, plugins: IRepositoryPlugin[]): THook[] {
-  return plugins
-    .filter(plugin => !!plugin[hook])
-    .map(plugin => plugin[hook] as THook);
+export function filterHooks(hook: string, plugins: IRepositoryPlugin[]): IRepositoryPlugin[] {
+  return plugins.filter(plugin => plugin.implementedHooks().find(x => x === hook));
 }
 
 export async function callPluginHooks<T>(
   hookName: string,
   plugins: IRepositoryPlugin[],
-  callback: (hook: T) => Promise<void | Complex>,
+  callback: (hook: T, plugin: IRepositoryPlugin) => Promise<void | Complex>,
 ): Promise<void | PreventedResult> {
   const preventedReasons = [];
-  const hooks = getPluginHooks<T>(hookName, plugins);
-  for (let i = 0; i < hooks.length; i++) {
-    const hook = hooks[i];
-    const preventReason = await callback(hook);
+  const filteredPlugins = filterHooks(hookName, plugins);
+  for (let i = 0; i < filteredPlugins.length; i++) {
+    const plugin = plugins[i];
+    const hook = plugin[hookName] as T;
+    const preventReason = await callback(hook, plugin);
     // if true, some plugin prevented the operation
     if (preventReason) preventedReasons.push(preventReason);
   }

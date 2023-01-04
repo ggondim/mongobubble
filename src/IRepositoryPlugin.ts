@@ -70,6 +70,8 @@ export type OnAfterGetHook = (
 export interface IRepositoryPlugin {
   PLUGIN_NAME: string;
 
+  implementedHooks(): string[];
+
   onBeforeInsert: undefined | OnBeforeInsertHook;
   onBeforePatch: undefined | OnBeforePatchHook;
   onBeforeReplace: undefined | OnBeforeReplaceHook;

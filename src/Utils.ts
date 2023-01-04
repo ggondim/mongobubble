@@ -47,3 +47,19 @@ export function getMethods(obj): string[] {
     .filter(item => typeof obj[item as PrimitiveValidIndexSignature] === 'function')
     .map(i => i.toString());
 }
+
+export interface EmptyConstructorOf<T> {
+  new(): T;
+}
+
+export enum LogLevel {
+  Debug = '0:debug',
+  Verbose = '0:verbose',
+  Info = '1:verbose',
+  Warn = '2:warn',
+  Error = '3:error',
+}
+
+export function equals(a: any, b: any): boolean {
+  return (a === b) || (typeof a.equals === 'function' && a.equals(b));
+}

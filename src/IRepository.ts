@@ -6,9 +6,10 @@ import { IRepositoryPlugin } from './IRepositoryPlugin';
 import { JsonPatchOperation } from './MongoDbUtils';
 import { Primitive } from './Utils';
 import PreventedResult from './PreventedResult';
+import { ClonableConstructor } from './Entity';
 
 export default interface IRepository<TEntity> {
-  entityConstructor: (obj: Partial<TEntity>) => TEntity;
+  EntityClass: ClonableConstructor<TEntity>;
 
   collection: Collection<TEntity>;
 
