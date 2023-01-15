@@ -1,0 +1,10 @@
+{
+	"search.exclude": {
+		"**/dist": true
+	},
+	"conventionalCommits.emojiFormat": "emoji",
+	"conventionalCommits.scopes": [
+		"JsonSchemaValidationPlugin",
+		"OnlineArchivePlugin"
+	]
+}
