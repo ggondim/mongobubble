@@ -41,8 +41,8 @@ See more information in [Technical concepts](#Technical-concepts) section.
   <dt><strong>Schema validation with JSON Schema</strong> 🧩</dt>
   <dd>Define <a href="https://json-schema.org/">JSON schemas</a> for your classes, automatically generated from typings or handcrafted, with <a href="https://github.com/BoLaMN/ajv-bsontype"><code>bsontype</code></a> validation support.</dd>
 
-  <dt><strong><a href="https://tsed.io/docs/model.html">Ts.ED Model</a> decorators support</strong> 🎀</dt>
-  <dd>Instead of defining JSON Schemas, use decorators to specify property constraints.</dd>
+  <dt><strong>Ts.ED decorators support</strong> 🎀</dt>
+  <dd>Instead of defining schemas, use <a href="https://tsed.io/docs/model.html">Ts.ED Model decorators</a> to specify property constraints.</dd>
 
   <dt><strong>Document versioning</strong> 🔢</dt>
   <dd>Automatic versioning of documents, incremented in each write operation.</dd>
@@ -356,7 +356,7 @@ This means you:
 
 <br/>
 
-### Modeling entity classes
+### ⭐ Modeling entity classes
 
 To use a class as an entity type, extend the `ObjectIdEntity` class.
 
@@ -412,7 +412,7 @@ class User extends ObjectIdEntity<User> {
 
 This way MongoBubble will infer the collection name from this property and won't need a `collectionName` property.
 
-### Repository initialization
+### ⭐ Repository initialization
 
 The default repository initialization is the following:
 
@@ -474,7 +474,7 @@ import { LogLevel } from 'mongobubble';
 const repository = new MongoBubble<User>(User, { db, logLevel: LogLevel.Nothing });
 ```
 
-### Basic repository methods
+### ⭐ Basic repository methods
 
 The basic repository methods for CRUD operations are:
 
@@ -491,7 +491,7 @@ The basic repository methods for CRUD operations are:
 * [deleteOneById](): removes a single document by its identity
 * [deleteOne](): removes a single document given a specified query
 
-### Updating documents with JSON Patch
+### ⭐ Updating documents with JSON Patch
 
 [JSON Patch](https://jsonpatch.com/) is a format for describing changes to a JSON document. It can be used to avoid replacing a whole document when only a part has changed. Its also useful to use in combination with HTTP PATCH methods.
 
@@ -511,7 +511,7 @@ await repository.patchOne({ _id: user._id }, userPatch);
 
 MongoBubble uses [jsonpatch-to-mongodb](https://github.com/mongodb-js/jsonpatch-to-mongodb) under the hood. So be aware of [its limitations](https://github.com/mongodb-js/jsonpatch-to-mongodb/blob/master/index.js).
 
-### Validating documents with JSON Schema
+### ⭐ Validating documents with JSON Schema
 
 You can define JSON Schema for your entities either using [JSON Schema](https://ajv.js.org/guide/schema-language.html#json-schema) (drafts 04, 06, 07, 2019-09 and 2020-12) or [JSON Type Definition](https://ajv.js.org/guide/schema-language.html#json-type-definition).
 
@@ -554,7 +554,7 @@ const repository = new MongoBubble<User>(User, { db, schema: userSchema, ajv: aj
 
 >💡 Mind the JsonSchemaValidationPlugin also uses [ajv-bsontype](https://www.npmjs.com/package/ajv-bsontype) under the hood so it will inject this AJV plugin to the `ajv` instance specified in options.
 
-### Automatic LifecyclePlugin metadata
+### ⭐ Automatic LifecyclePlugin metadata
 
 When using `EntityWithLifecycle` class and MongoBubble with LifecyclePlugin enabled, the repository will perform automatic metadata writing, such as:
 
@@ -672,7 +672,7 @@ await repository.replaceOne(user);
 // now user._meta.status is "ARCHIVED" in database
 ```
 
-### Configuring Atlas Online Archive connections
+### ⭐ Configuring Atlas Online Archive connections
 
 MongoDB Atlas' Online Archive is a hosted service that automatically archive data by custom rules, while keeping the archived data acessible. This is useful to optimize storage costs and performance and also to implement soft delete.
 
