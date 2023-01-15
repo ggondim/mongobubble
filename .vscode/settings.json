@@ -5,6 +5,7 @@
 	"conventionalCommits.emojiFormat": "emoji",
 	"conventionalCommits.scopes": [
 		"JsonSchemaValidationPlugin",
-		"OnlineArchivePlugin"
+		"OnlineArchivePlugin",
+		"TsEdPlugin"
 	]
 }

@@ -8,9 +8,7 @@ import {
   DeleteResult,
   Filter,
   InferIdType,
-  InsertManyResult,
   InsertOneOptions,
-  InsertOneResult,
   MatchKeysAndValues,
   MongoClient,
   OptionalUnlessRequiredId,
@@ -36,12 +34,18 @@ import
   OnBeforeReplaceHook,
 }
   from './IRepositoryPlugin';
-import { Complex, LogLevel, Primitive } from './Utils';
-import { DefaultPlugins, callPluginHooks, initializePlugins } from './RepositoryPluginUtils';
+import { Complex, LogLevel } from './Utils';
+import {
+  DefaultPlugins,
+  callPluginHooks,
+  initializeCustomPlugins,
+  initializePlugins,
+} from './RepositoryPluginUtils';
 import IRepository from './IRepository';
-import PreventedResult, { PreventedResultError } from './PreventedResult';
+import { PreventedResultError } from './PreventedResult';
 import IConnectionManager from './IConnectionManager';
 import { ClonableConstructor } from './Entity';
+import { RepositoryPluginConstructor } from './RepositoryPlugin';
 // #endregion
 
 /**
@@ -55,10 +59,10 @@ export type MongoRepositoryOptions = {
    */
   overrideDefaultPlugins?: DefaultPlugins[];
   /**
-   * (Optional) Custom plugins that repository will use. Each plugin should implement
+   * (Optional) Custom plugins that repository classes  will use. Each plugin should implement
    * {IRepositoryPlugin} interface.
    */
-  plugins?: IRepositoryPlugin[];
+  plugins?: RepositoryPluginConstructor[];
   /**
    * The name of database or a Mongo {Db} instance.
    */
@@ -169,8 +173,9 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
       this.dbName = options.db;
     }
 
+    this.plugins = [] as IRepositoryPlugin[];
     this.plugins = [
-      ...((options.plugins || []) as IRepositoryPlugin[]),
+      ...initializeCustomPlugins(this, options.plugins, options),
       ...initializePlugins(
         this,
         defPlugins as DefaultPlugins[],

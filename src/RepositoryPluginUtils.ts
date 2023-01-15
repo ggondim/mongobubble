@@ -8,6 +8,7 @@ import IRepository from './IRepository';
 import { Complex } from './Utils';
 import PreventedResult from './PreventedResult';
 import JsonSchemaValidationPlugin from './plugins/jsonschema/JsonSchemaValidationPlugin';
+import { RepositoryPluginConstructor, RepositoryPluginConstructorTyped } from './RepositoryPlugin';
 
 export enum DefaultPlugins {
   JsonSchemaValidationPlugin = 'JsonSchemaValidationPlugin',
@@ -30,6 +31,18 @@ export function initializePlugins<TEntity>(
     }
   }
   return result;
+}
+
+export function initializeCustomPlugins<TEntity extends Document>(
+  repository: IRepository<TEntity>,
+  plugins: RepositoryPluginConstructor[],
+  options?: Document,
+): IRepositoryPlugin[] {
+  if (!plugins) return [] as IRepositoryPlugin[];
+
+  return plugins
+    .map(p => (p as unknown) as RepositoryPluginConstructorTyped<TEntity>) // this is a gambiarra
+    .map(P => new P(repository, options));
 }
 
 export function filterHooks(hook: string, plugins: IRepositoryPlugin[]): IRepositoryPlugin[] {

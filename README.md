@@ -41,6 +41,9 @@ See more information in [Technical concepts](#Technical-concepts) section.
   <dt><strong>Schema validation with JSON Schema</strong> 🧩</dt>
   <dd>Define <a href="https://json-schema.org/">JSON schemas</a> for your classes, automatically generated from typings or handcrafted, with <a href="https://github.com/BoLaMN/ajv-bsontype"><code>bsontype</code></a> validation support.</dd>
 
+  <dt><strong><a href="https://tsed.io/docs/model.html">Ts.ED Model</a> decorators support</strong> 🎀</dt>
+  <dd>Instead of defining JSON Schemas, use decorators to specify property constraints.</dd>
+
   <dt><strong>Document versioning</strong> 🔢</dt>
   <dd>Automatic versioning of documents, incremented in each write operation.</dd>
 

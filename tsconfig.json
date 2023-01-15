@@ -9,6 +9,7 @@
     "package.json"
   ],
   "compilerOptions": {
+    "experimentalDecorators": true,
     "rootDir": "./src",
     "esModuleInterop": true,
     "noImplicitAny": false,
