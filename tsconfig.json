@@ -1,19 +1,8 @@
 {
-  "include": [
-    "./src/**/*.ts",
-  ],
-  "exclude": [
-    "dist",
-    "node_modules",
-    "**/*.spec.ts",
-    "package.json"
-  ],
   "compilerOptions": {
     "experimentalDecorators": true,
-    "rootDir": "./src",
     "esModuleInterop": true,
     "noImplicitAny": false,
-    "outDir": "./dist",
     "declaration": true,
     "inlineSourceMap": true,
     "noEmitOnError": true,

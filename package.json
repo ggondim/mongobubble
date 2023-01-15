@@ -1,56 +1,22 @@
 {
   "name": "mongobubble",
-  "version": "0.0.1",
-  "description": "🍃🫧A MongoDB framework for Node.js and TypeScript, without the need of explict schema modeling. Features include versioning, JSON Schema validation, JSON Patch, lifecycle and many more.",
-  "readme": "README.md",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist/",
-    "docs/",
-    "README.md"
-  ],
+  "private": true,
   "scripts": {
-    "build": "npm run create-index; npm run ts:build",
-    "create-index": "npx ctix single -p ./tsconfig.json -v -m -r -x --useUpperFirst",
+    "build:core": "npm -w packages/core run build",
+    "build:json-schema": "npm -w packages/json-schema run build",
+    "build:w:mongobubble": "npm -w packages/mongobubble run build",
+    "build:online-archive": "npm -w packages/online-archive run build",
+    "build:w:tsed": "npm -w packages/tsed run build",
+    "build:all": "npm-run-all -l build:core build:json-schema build:online-archive --parallel build:w:**",
     "prepare": "npx husky install",
-    "release-rc": "npm run release -- --prerelease rc",
-    "release": "npx standard-version",
     "hook:commit-msg": "npx --no -- commitlint --edit $1",
     "hook:pre-commit": "npm run lint; npm run ts:lint; npm run test",
-    "lint": "eslint ./src/*.ts --format stylish",
-    "ts:lint": "tsc --noEmit",
-    "ts:build": "rimraf dist; mkdir dist; tsc",
-    "test": "npx jest --detectOpenHandles"
+    "test": "npm -w packages/core run test; npm -w packages/mongobubble run test; npm -w packages/tsed run test;"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ggondim/mongobubble.git"
-  },
-  "keywords": [
-    "MongoDB",
-    "Repository",
-    "validation",
-    "EJSON",
-    "ORM",
-    "ODM"
-  ],
-  "author": {
-    "email": "gustavospgondim@gmail.com",
-    "name": "Gustavo Gondim",
-    "url": "https://github.com/ggondim"
-  },
-  "license": "LicenseRef-LICENSE",
-  "licenseRef": "docs/LICENSE",
-  "bugs": {
-    "url": "https://github.com/ggondim/mongobubble/issues"
-  },
-  "homepage": "https://github.com/ggondim/mongobubble#readme",
   "devDependencies": {
     "@commitlint/cli": "^17.3.0",
     "@commitlint/config-conventional": "^17.3.0",
     "@jest/globals": "^29.3.1",
-    "@tsed/schema": "^7.10.1",
     "@types/node": "^18.11.18",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
     "@typescript-eslint/parser": "^5.48.0",
@@ -61,17 +27,17 @@
     "eslint-plugin-eslint-comments": "^3.2.0",
     "eslint-plugin-import": "^2.26.0",
     "husky": "^8.0.2",
+    "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
     "standard-version": "^9.5.0",
     "ts-jest": "^29.0.3",
     "typescript": "^4.9.4"
   },
-  "dependencies": {
-    "ajv": "^8.11.2",
-    "ajv-bsontype": "^1.0.7",
-    "bson": "^4.7.0",
-    "jsonpatch-to-mongodb": "^1.0.0",
-    "mongodb": "^4.13.0",
-    "ts-advanced-types": "^1.0.0"
-  }
+  "workspaces": [
+    "packages/core",
+    "packages/mongobubble",
+    "packages/json-schema",
+    "packages/online-archive",
+    "packages/tsed"
+  ]
 }

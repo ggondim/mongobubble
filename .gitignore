@@ -1,4 +1,5 @@
 dist
+**/dist
 
 # Logs
 logs
@@ -132,3 +133,4 @@ dist
 .pnp.*
 
 index.ts.bak
+**/index.ts.bak

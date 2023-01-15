@@ -4,8 +4,10 @@
 	},
 	"conventionalCommits.emojiFormat": "emoji",
 	"conventionalCommits.scopes": [
-		"JsonSchemaValidationPlugin",
-		"OnlineArchivePlugin",
-		"TsEdPlugin"
+		"core",
+		"json-schema",
+		"mongobubble",
+		"online-archive",
+    "tsed"
 	]
 }
