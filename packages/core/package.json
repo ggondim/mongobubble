@@ -1,0 +1,51 @@
+{
+  "name": "@mongobubble/core",
+  "version": "1.1.1",
+  "description": "The lite and unopinonated version of MongoBubble (https://github.com/ggondim/mongobubble.git)",
+  "readme": "README.md",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "docs/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "npm run create-index; npm run ts:build",
+    "create-index": "npx ctix single -p ./tsconfig.json -v -m -r -x --useUpperFirst",
+    "release-rc": "npm run release -- --prerelease rc",
+    "release": "npx standard-version",
+    "lint": "eslint ./src/*.ts --format stylish",
+    "ts:lint": "tsc --noEmit",
+    "ts:build": "rimraf dist; mkdir dist; tsc",
+    "test": "npx jest --detectOpenHandles"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ggondim/mongobubble.git"
+  },
+  "keywords": [
+    "MongoDB",
+    "Repository",
+    "validation",
+    "EJSON",
+    "ORM",
+    "ODM"
+  ],
+  "author": {
+    "email": "gustavospgondim@gmail.com",
+    "name": "Gustavo Gondim",
+    "url": "https://github.com/ggondim"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ggondim/mongobubble/issues"
+  },
+  "homepage": "https://github.com/ggondim/mongobubble#readme",
+  "dependencies": {
+    "bson": "^5.4.0",
+    "jsonpatch-to-mongodb": "^1.0.0",
+    "mongodb": "^5.8.1",
+    "ts-advanced-types": "^1.0.0"
+  }
+}

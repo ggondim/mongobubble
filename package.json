@@ -1,0 +1,46 @@
+{
+  "name": "mongobubble",
+  "private": true,
+  "scripts": {
+    "build:core": "npm -w packages/core run build",
+    "build:json-schema": "npm -w packages/json-schema run build",
+    "build:mongobubble": "npm -w packages/mongobubble run build",
+    "build:online-archive": "npm -w packages/online-archive run build",
+    "build:tsed": "npm -w packages/tsed run build",
+    "build:all": "npm-run-all -l build:core build:json-schema build:online-archive build:tsed build:mongobubble",
+    "lint": "npm run lint -ws",
+    "ts:lint": "npm run ts:lint -ws",
+    "prepare": "npx husky install",
+    "hook:commit-msg": "npx --no -- commitlint --edit $1",
+    "hook:pre-commit": "npm run lint; npm run ts:lint; npm run test",
+    "publish:all": "npm publish -w packages/core --access=public && npm publish -w packages/json-schema --access=public && npm publish -w packages/mongobubble --access=public && npm publish -w packages/online-archive --access=public && npm publish -w packages/tsed --access=public && echo 'Wow 🚀'",
+    "test": "npm run test -ws --if-present"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
+    "@jest/globals": "^29.6.4",
+    "@types/node": "^18.17.11",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "ctix": "^0.6.0",
+    "eslint": "^8.47.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.1.0",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "eslint-plugin-import": "^2.28.1",
+    "husky": "^8.0.3",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
+    "standard-version": "^9.5.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^4.9.5"
+  },
+  "workspaces": [
+    "packages/core",
+    "packages/mongobubble",
+    "packages/json-schema",
+    "packages/online-archive",
+    "packages/tsed"
+  ]
+}

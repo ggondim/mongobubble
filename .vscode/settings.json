@@ -1,0 +1,13 @@
+{
+	"search.exclude": {
+		"**/dist": true
+	},
+	"conventionalCommits.emojiFormat": "emoji",
+	"conventionalCommits.scopes": [
+		"core",
+		"json-schema",
+		"mongobubble",
+		"online-archive",
+    "tsed"
+	]
+}
