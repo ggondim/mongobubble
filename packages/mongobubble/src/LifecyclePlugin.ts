@@ -1,4 +1,4 @@
-import { Document, ObjectId } from 'bson';
+import { Document } from 'bson';
 import {
   Filter,
   MatchKeysAndValues,
@@ -12,9 +12,7 @@ import {
   IRepository,
   IRepositoryPlugin,
   JsonPatchOperation,
-  Primitive,
   RepositoryPlugin,
-  equals,
 } from '@mongobubble/core';
 import {
   EntityWithLifecycle, LifecycleStages, LifecycleTimestamps,
@@ -102,34 +100,36 @@ export default class LifecyclePlugin<TEntity>
   ): Promise<void | Complex> {
     setMetadata(LifecycleTimestamps.updated, documentOrDocuments, options);
 
-    // get the current version of documents - makes the replace method to have 3 operations
-    const documents = Array.isArray(documentOrDocuments)
-      ? documentOrDocuments
-      : [documentOrDocuments];
-    const versions = await this.repository.collection.find({
-      _id: {
-        $in: documents.map(x => x._id),
-      },
-    }, {
-      projection: { '_meta.version': 1 },
-    }).toArray();
-    versions.forEach(version => {
-      // TODO: this doesn't have a good performance, but it's the only way instead sorting the
-      // documents array - maybe convert to a hashmap is better, but every solution iterates
-      const document = documents.find(x => equals(x._id, version._id)) as Document;
-      EntityWithLifecycle.initializeMetadata(document);
-      document._meta.version = (version as Document)._meta.version;
-    });
+    // TODO: preserve the old metadata when replacing a document - may affects performance
+    // * it could be made with an update and an aggregation pipeline (Mongo 4.2+) but the core
+    // * module should be updated to support it and pass the aggregation pipeline to plugin hooks
+    // // get the current version of documents - makes the replace method to have 3 operations
+    // const documents = Array.isArray(documentOrDocuments)
+    //   ? documentOrDocuments
+    //   : [documentOrDocuments];
+    // const versions = await this.repository.collection.find({
+    //   _id: {
+    //     $in: documents.map(x => x._id),
+    //   },
+    // }, {
+    //   projection: { '_meta.version': 1 },
+    // }).toArray();
+    // versions.forEach(version => {
+    //   // TODO: this doesn't have a good performance, but it's the only way instead sorting the
+    //   // documents array - maybe convert to a hashmap is better, but every solution iterates
+    //   const document = documents.find(x => equals(x._id, version._id)) as Document;
+    //   EntityWithLifecycle.initializeMetadata(document);
+    //   document._meta.version = (version as Document)._meta.version;
+    // });
   }
 
   async onBeforeDelete(
-    identity: ObjectId | Primitive | Document,
+    filter: Filter<TEntity>,
     options?: Document,
   ): Promise<void | Complex> {
     (() => options)();
     // if soft delete is enabled, then prevent document exclusion and archive it
     if (this.softDelete) {
-      const filter = { _id: identity } as Filter<TEntity>;
       const ops = [{
         op: 'replace',
         path: '/_meta/status',

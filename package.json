@@ -3,17 +3,16 @@
   "private": true,
   "scripts": {
     "build:core": "npm -w packages/core run build",
-    "build:json-schema": "npm -w packages/json-schema run build",
+    "build:validator-tsed": "npm -w packages/validator-tsed run build",
     "build:mongobubble": "npm -w packages/mongobubble run build",
     "build:online-archive": "npm -w packages/online-archive run build",
-    "build:tsed": "npm -w packages/tsed run build",
-    "build:all": "npm-run-all -l build:core build:json-schema build:online-archive build:tsed build:mongobubble",
+    "build:all": "npm-run-all -l build:core build:validator-tsed build:online-archive build:mongobubble",
     "lint": "npm run lint -ws",
     "ts:lint": "npm run ts:lint -ws",
     "prepare": "npx husky install",
     "hook:commit-msg": "npx --no -- commitlint --edit $1",
     "hook:pre-commit": "npm run lint; npm run ts:lint; npm run test",
-    "publish:all": "npm publish -w packages/core --access=public && npm publish -w packages/json-schema --access=public && npm publish -w packages/mongobubble --access=public && npm publish -w packages/online-archive --access=public && npm publish -w packages/tsed --access=public && echo 'Wow 🚀'",
+    "publish:all": "npm publish -w packages/core --access=public && npm publish -w packages/validator-tsed --access=public && npm publish -w packages/mongobubble --access=public && npm publish -w packages/online-archive --access=public && echo 'Wow 🚀'",
     "test": "npm run test -ws --if-present"
   },
   "devDependencies": {
@@ -39,8 +38,7 @@
   "workspaces": [
     "packages/core",
     "packages/mongobubble",
-    "packages/json-schema",
     "packages/online-archive",
-    "packages/tsed"
+    "packages/validator-tsed"
   ]
 }

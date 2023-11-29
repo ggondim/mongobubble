@@ -69,33 +69,25 @@ export class EntityWithLifecycle<
     super(identityFactory, obj);
   }
 
-  publish(options?: Document): JsonPatchOperation[] {
+  static publish(document: Document, options?: Document): JsonPatchOperation[] {
     return [
-      ...EntityWithLifecycle.setEvent(LifecycleTimestamps.published, this, options),
-      ...EntityWithLifecycle.setStatus(this, LifecycleStages.PUBLISHED),
+      ...EntityWithLifecycle.setEvent(LifecycleTimestamps.published, document, options),
+      ...EntityWithLifecycle.setStatus(document, LifecycleStages.PUBLISHED),
     ];
   }
 
-  archive(options?: Document): JsonPatchOperation[] {
+  static archive(document: Document, options?: Document): JsonPatchOperation[] {
     return [
       ...EntityWithLifecycle.setEvent(LifecycleTimestamps.archived, this, options),
       ...EntityWithLifecycle.setStatus(this, LifecycleStages.ARCHIVED),
     ];
   }
 
-  unpublish(options?: Document): JsonPatchOperation[] {
+  static unpublish(document: Document, options?: Document): JsonPatchOperation[] {
     return [
       ...EntityWithLifecycle.setEvent(LifecycleTimestamps.updated, this, options),
       ...EntityWithLifecycle.setStatus(this, LifecycleStages.DRAFT),
     ];
-  }
-
-  unarchiveToDraft() {
-    this.unpublish();
-  }
-
-  unarchiveToPublished() {
-    this.publish();
   }
 
   static resetMetadata(document: Document) {

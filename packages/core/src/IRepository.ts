@@ -16,7 +16,7 @@ import PreventedResult from './PreventedResult';
 import { ClonableConstructor } from './Entity';
 
 export default interface IRepository<TEntity> {
-  EntityClass: ClonableConstructor<TEntity>;
+  EntityClass?: ClonableConstructor<TEntity>;
 
   collection: Collection<TEntity>;
 
@@ -24,6 +24,7 @@ export default interface IRepository<TEntity> {
 
   plugins: IRepositoryPlugin[];
 
+  // POST
   insertOne(
     document: OptionalUnlessRequiredId<TEntity>,
     options?: Document,
@@ -34,6 +35,7 @@ export default interface IRepository<TEntity> {
     options?: Document,
   ): Promise<OptionalUnlessRequiredId<TEntity>[] | PreventedResult>;
 
+  // PATCH /:id
   patchOneById(
     id: InferIdType<TEntity>,
     documentSetProperties: Partial<TEntity>,
@@ -50,6 +52,7 @@ export default interface IRepository<TEntity> {
     options?: Document & UpdateOptions,
   ): Promise<Document | PreventedResult>;
 
+  // PATCH
   patchOne(
     filter: Filter<TEntity>,
     documentSetProperties: Partial<TEntity>,
@@ -66,6 +69,7 @@ export default interface IRepository<TEntity> {
     options?: Document & UpdateOptions,
   ): Promise<Document | PreventedResult>;
 
+  // PATCH
   patchMany(
     filter: Filter<TEntity>,
     documentSetProperties: Partial<TEntity>,
@@ -82,6 +86,7 @@ export default interface IRepository<TEntity> {
     options?: Document & UpdateOptions,
   ): Promise<UpdateResult | PreventedResult>;
 
+  // PUT
   replaceOne(
     document: OptionalUnlessRequiredId<TEntity>,
     options?: Document,
@@ -92,16 +97,19 @@ export default interface IRepository<TEntity> {
     options?: Document,
   ): Promise<DeleteResult | PreventedResult>;
 
+  // GET
   list(
     pipeline: Document[],
     postPipeline: Document[],
   ): Promise<TEntity[] | PreventedResult>;
 
+  // GET
   query<TResult = TEntity>(
     pipeline: Document[],
     postPipeline: Document[],
   ): Promise<TResult[] | PreventedResult>;
 
+  // GET
   get(
     id: InferIdType<TEntity>,
   ): Promise<TEntity | PreventedResult>;

@@ -1,7 +1,6 @@
 import { Document, ObjectId } from 'bson';
 import { Collection, InferIdType, OptionalUnlessRequiredId } from 'mongodb';
 import {
-  ClonableConstructor,
   MongoRepository,
   MongoRepositoryOptions,
   OnAfterListHook,
@@ -9,9 +8,8 @@ import {
   PreventedResult,
   callPluginHooks,
 } from '@mongobubble/core';
-import { JsonSchemaValidationOptions, JsonSchemaValidationPlugin } from '@mongobubble/json-schema';
-import { TsEdPlugin } from '@mongobubble/tsed';
 import { OnlineArchiveConnectionType } from '@mongobubble/online-archive';
+import { TsEdValidator } from '@mongobubble/validator-tsed';
 import { EntityWithLifecycle, LifecycleStages } from './EntityWithLifecycle';
 import LifecyclePlugin, { LifecyclePluginOptions } from './LifecyclePlugin';
 
@@ -27,16 +25,11 @@ export default class MongoBubble<
    * @memberof MongoRepository
    */
   constructor(
-    entityClass: ClonableConstructor<TEntity>,
-    options: Document & MongoRepositoryOptions & LifecyclePluginOptions,
+    options: Document & MongoRepositoryOptions<TEntity> & LifecyclePluginOptions,
   ) {
-    super(entityClass, options);
+    super(options);
     this.plugins.push(new LifecyclePlugin(this, options as Partial<LifecyclePluginOptions>));
-    this.plugins.push(new TsEdPlugin(this, options));
-    this.plugins.push(new JsonSchemaValidationPlugin(
-      this,
-      options as Partial<JsonSchemaValidationOptions>,
-    ));
+    this.validator = TsEdValidator;
   }
 
   /**
@@ -179,5 +172,28 @@ export default class MongoBubble<
     result._meta.ancestor = id;
 
     return this.insertOne(result as OptionalUnlessRequiredId<TEntity>, options);
+  }
+
+  async publishById(id: InferIdType<TEntity>, options?: Document) {
+    const patch = EntityWithLifecycle.publish({}, options);
+    return this.patchOneById(id, patch);
+  }
+
+  async archiveById(id: InferIdType<TEntity>, options?: Document) {
+    const patch = EntityWithLifecycle.archive({}, options);
+    return this.patchOneById(id, patch);
+  }
+
+  async unpublishById(id: InferIdType<TEntity>, options?: Document) {
+    const patch = EntityWithLifecycle.unpublish({}, options);
+    return this.patchOneById(id, patch);
+  }
+
+  async unarchiveToDraft(id: InferIdType<TEntity>, options?: Document) {
+    return this.unpublishById(id, options);
+  }
+
+  async unarchiveToPublished(id: InferIdType<TEntity>, options?: Document) {
+    return this.publishById(id, options);
   }
 }

@@ -1,7 +1,9 @@
 // #region [rgba(0,0,255,0.2)] HOOK TYPES
 
 import { Document, ObjectId } from 'bson';
-import { UpdateResult, DeleteResult, UpdateFilter, UpdateOptions } from 'mongodb';
+import {
+  UpdateResult, DeleteResult, UpdateFilter, UpdateOptions,
+} from 'mongodb';
 import { JsonPatchOperation, InsertOneOrManyResult } from './MongoDbUtils';
 import { Complex, Primitive } from './Utils';
 

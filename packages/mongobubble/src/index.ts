@@ -1,4 +1,4 @@
-// created from ctix 2023-08-25 16:57:41
+// created from ctix 2023-11-29 21:57:07
 
 export * from './EntityWithLifecycle';
 export * from './LifecyclePlugin';

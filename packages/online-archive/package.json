@@ -1,6 +1,6 @@
 {
   "name": "@mongobubble/online-archive",
-  "version": "1.0.2",
+  "version": "1.0.6",
   "description": "Online Archive utilities for MongoBubble (https://github.com/ggondim/mongobubble.git)",
   "readme": "README.md",
   "main": "dist/index.js",
@@ -42,7 +42,7 @@
   },
   "homepage": "https://github.com/ggondim/mongobubble#readme",
   "dependencies": {
-    "@mongobubble/core": "^1.1.1",
-    "mongodb": "^5.8.1"
+    "@mongobubble/core": "2.0.2",
+    "mongodb": "^6.3.0"
   }
 }

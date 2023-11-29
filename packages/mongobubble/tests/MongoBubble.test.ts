@@ -16,7 +16,8 @@ async function dropCollections() {
 }
 
 function newUserRepository() {
-  return new MongoBubble(UserWithMetadata, {
+  return new MongoBubble({
+    EntityClass: UserWithMetadata,
     db,
     logLevel: LogLevel.Error,
   });
@@ -69,9 +70,9 @@ describe('MongoRepository', () => {
 
     const user = new UserWithMetadata();
     user.name = 'Gustavo';
-    user.archive();
 
     await repository.insertOne(user);
+    await repository.archiveById(user._id);
 
     const listArchive = await repository.listArchive() as UserWithMetadata[];
     expect(listArchive).toHaveLength(1);
@@ -85,9 +86,9 @@ describe('MongoRepository', () => {
 
     const user = new UserWithMetadata();
     user.name = 'Gustavo';
-    user.archive();
 
-    await repository.insertOne(user) as UserWithMetadata;
+    await repository.insertOne(user);
+    await repository.archiveById(user._id);
 
     const results = await repository.listAll() as UserWithMetadata[];
     expect(results).toHaveLength(1);
@@ -98,9 +99,9 @@ describe('MongoRepository', () => {
 
     const user1 = new UserWithMetadata();
     user1.name = 'Gustavo';
-    user1.archive();
 
     await repository.insertOne(user1);
+    await repository.archiveById(user1._id);
 
     const user2 = await repository.branch(user1._id) as UserWithMetadata;
 

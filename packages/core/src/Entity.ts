@@ -1,6 +1,6 @@
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 /* eslint-disable max-classes-per-file */
-import { Document, ObjectId } from 'bson';
+import { Document, EJSON, ObjectId } from 'bson';
 import { Complex } from './Utils';
 
 /**
@@ -28,6 +28,10 @@ export interface IEntity<Identity = ObjectId> {
   _: Document;
 }
 
+export interface IClonableEntity {
+  initializeClone(clone: Document): void;
+}
+
 /**
  * An Entity class which can be instantiated with an existing object with the same attributes.
  * @export
@@ -36,7 +40,8 @@ export interface IEntity<Identity = ObjectId> {
  * @template T Entity type.
  * @template Identity Entity identity type.
  */
-export class ClonableEntity<T extends IEntity<Identity>, Identity> implements IEntity<Identity> {
+export class ClonableEntity<T extends IEntity<Identity>, Identity> implements
+  IEntity<Identity>, IClonableEntity {
   readonly _id: Identity;
 
   /**
@@ -46,16 +51,49 @@ export class ClonableEntity<T extends IEntity<Identity>, Identity> implements IE
    * @memberof ClonableEntity
    */
   constructor(identityFactory: (() => Identity) | null, obj?: Partial<T>) {
-    if (obj) Object.assign(this, obj);
     if (obj && !obj._id) {
       throw new Error('Missing object _id for cloning');
+    }
+    if (obj) {
+      this.initializeClone(obj as Document);
     }
     if (!obj && identityFactory) {
       this._id = identityFactory();
     }
   }
 
+  initializeClone(clone: Document): void {
+    // TODO: stringify is not a good cloning algorithm, but it should preserve native
+    // bson types
+    const deepClone = EJSON.parse(EJSON.stringify(clone));
+    const keys = Object.keys(deepClone);
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      this[key] = deepClone[key];
+    }
+  }
+
   _: Document;
+
+  /**
+   * Parses an identity string into the identity type.
+   * Currently supports ObjectId, number and string.
+   * @static
+   * @param {string} id Identity string to parse.
+   * @return {number | ObjectId | string} Parsed identity.
+   * @memberof ClonableEntity
+   */
+  static parseId(id: string): number | ObjectId | string {
+    const isObjectId = ObjectId.isValid(id);
+    const isNumber = !Number.isNaN(Number(id));
+    if (isObjectId) {
+      return new ObjectId(id);
+    }
+    if (isNumber) {
+      return Number(id);
+    }
+    return id;
+  }
 }
 
 /**
@@ -73,6 +111,10 @@ export class ObjectIdEntity<T extends IEntity> extends ClonableEntity<T, ObjectI
    */
   constructor(obj?: Partial<T>) {
     super(null, obj);
+  }
+
+  static parseId(id: string) {
+    return new ObjectId(id);
   }
 }
 

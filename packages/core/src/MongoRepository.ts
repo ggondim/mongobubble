@@ -12,6 +12,7 @@ import {
   MatchKeysAndValues,
   MongoClient,
   OptionalUnlessRequiredId,
+  ReplaceOptions,
   UpdateFilter,
   UpdateOptions,
   UpdateResult,
@@ -45,13 +46,15 @@ import PreventedResult, { PreventedResultError } from './PreventedResult';
 import IConnectionManager from './IConnectionManager';
 import { ClonableConstructor } from './Entity';
 import { RepositoryPluginConstructor } from './RepositoryPlugin';
+import IRepositoryValidator from './IRepositoryValidator';
+import { AjvValidatorClass } from './AjvValidator';
 // #endregion
 
 /**
  * MongoRepository initialization options
  * @type
  */
-export type MongoRepositoryOptions = {
+export type MongoRepositoryOptions<TEntity> = {
   /**
    * (Optional) Custom plugins that repository classes  will use. Each plugin should implement
    * {IRepositoryPlugin} interface.
@@ -94,6 +97,12 @@ export type MongoRepositoryOptions = {
    * operation.
    */
   autoConnectionSwitch?: boolean,
+
+  validator?: IRepositoryValidator;
+
+  schema?: Document;
+
+  EntityClass?: ClonableConstructor<TEntity>;
 };
 
 /**
@@ -104,7 +113,7 @@ export type MongoRepositoryOptions = {
  * @template TEntity
  */
 export default class MongoRepository<TEntity> implements IRepository<TEntity> {
-  readonly EntityClass: ClonableConstructor<TEntity>;
+  readonly EntityClass?: ClonableConstructor<TEntity>;
 
   /**
    * The MongoDB driver's {Collection} instance. You can use it for custom operations that will not
@@ -148,6 +157,10 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
 
   protected readonly autoConnectionSwitch: boolean;
 
+  validator?: IRepositoryValidator;
+
+  schema?: Document;
+
   /**
    * Creates an instance of MongoRepository.
    * @param {ClonableConstructor<TEntity>} entityClass The entity class constructor of {TEntity}.
@@ -157,23 +170,24 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
    * @memberof MongoRepository
    */
   constructor(
-    entityClass: ClonableConstructor<TEntity>,
-    options: Document & MongoRepositoryOptions,
+    options: Document & MongoRepositoryOptions<TEntity>,
   ) {
-    const staticEntity = entityClass as Document;
+    const staticEntity = options.EntityClass as Document;
 
-    if (!options.collectionName && !staticEntity.COLLECTION) {
+    if (!options.collectionName && !staticEntity?.COLLECTION) {
       throw new Error('[MongoRepository] You shold specify a class with a static `COLLECTION` '
         + 'property or a `collectionName` option.');
     }
 
-    this.EntityClass = entityClass;
+    this.EntityClass = options.EntityClass;
     this.collectionName = options.collectionName || staticEntity.COLLECTION;
     this.client = options.client;
     this.manager = options.manager;
     this.uri = options.uri;
     this.autoConnectionSwitch = options.autoConnectionSwitch || false;
     this.logLevel = options.logLevel || LogLevel.Warn;
+    this.validator = options.validator || new AjvValidatorClass(options.ajv);
+    this.schema = options.schema;
 
     if (typeof options.db !== 'string') {
       this.db = options.db;
@@ -267,6 +281,15 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     options?: Document & Partial<BulkWriteOptions | InsertOneOptions>,
   ): Promise<OptionalUnlessRequiredId<TEntity> | OptionalUnlessRequiredId<TEntity>[]> {
     await this.ensureDbAndCollection();
+
+    if (this.validator && this.schema) {
+      (Array.isArray(documentOrDocuments) ? documentOrDocuments : [documentOrDocuments]).forEach(
+        document => this.validator.validate(document, {
+          schema: this.schema,
+          entityClass: this.EntityClass,
+        }),
+      );
+    }
 
     const preventResult = await callPluginHooks<OnBeforeInsertHook>(
       'onBeforeInsert',
@@ -425,6 +448,11 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
       ? toMongoDbUpdate(operationsOrDocumentPatch) as UpdateFilter<TEntity>
       : { $set: operationsOrDocumentPatch as MatchKeysAndValues<TEntity> };
 
+    if (options?.snapshot) {
+      options.snapshot = await this.collection.find(filter).toArray();
+      if (options.snapshot.lenght === 1) options.snapshot = options.snapshot[0];
+    }
+
     const preventResult = await callPluginHooks<OnBeforePatchHook<TEntity>>(
       'onBeforePatch',
       this.plugins,
@@ -463,22 +491,41 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
    */
   async replaceOne(
     document: OptionalUnlessRequiredId<TEntity>,
+    options?: Document & ReplaceOptions,
   ): Promise<UpdateResult> {
     await this.ensureDbAndCollection();
+
+    if (!document._id && options?.upsert) {
+      throw new Error('Upserting a document with no _id will insert a new document with a null'
+        + ' _id. Try to use insertOne instead.');
+    } else if (!document._id) {
+      throw new Error('Replacing a document with no _id could lead to a data loss.');
+    }
+
+    if (this.validator && this.schema) {
+      this.validator.validate(document, {
+        schema: this.schema,
+        entityClass: this.EntityClass,
+      });
+    }
+
+    if (options?.snapshot) {
+      options.snapshot = await this.collection.findOne({ _id: document._id });
+    }
 
     const preventResult = await callPluginHooks<OnBeforeReplaceHook>(
       'onBeforeReplace',
       this.plugins,
-      async (hook, plugin) => hook.bind(plugin, document)(),
+      async (hook, plugin) => hook.bind(plugin, document, options)(),
     );
     if (preventResult) throw new PreventedResultError(preventResult);
 
-    const result = await this.collection.replaceOne({ _id: document._id }, document);
+    const result = await this.collection.replaceOne({ _id: document._id }, document, options);
 
     await callPluginHooks<OnAfterReplaceHook>(
       'onAfterReplace',
       this.plugins,
-      async (hook, plugin) => hook.bind(plugin, result as UpdateResult, document)(),
+      async (hook, plugin) => hook.bind(plugin, result as UpdateResult, document, options)(),
     );
 
     this.autoClose();
@@ -495,7 +542,7 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
    */
   async deleteOneById(
     idOrDocument: Complex | ObjectId,
-  ): Promise<DeleteResult> {
+  ): Promise<DeleteResult | PreventedResult> {
     return this.deleteOne({ _id: idOrDocument } as Filter<TEntity>);
   }
 
@@ -508,15 +555,19 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
    */
   async deleteOne(
     query: Filter<TEntity>,
-  ): Promise<DeleteResult> {
+  ): Promise<DeleteResult | PreventedResult> {
     await this.ensureDbAndCollection();
 
-    const preventResult = await callPluginHooks<OnBeforeDeleteHook>(
-      'onBeforeDelete',
-      this.plugins,
-      async (hook, plugin) => hook.bind(plugin, query)(),
-    );
-    if (preventResult) throw new PreventedResultError(preventResult);
+    try {
+      const preventedResult = await callPluginHooks<OnBeforeDeleteHook>(
+        'onBeforeDelete',
+        this.plugins,
+        async (hook, plugin) => hook.bind(plugin, query)(),
+      );
+      if (preventedResult) return preventedResult;
+    } catch (error) {
+      throw new PreventedResultError(error);
+    }
 
     const result = await this.collection.deleteOne(query);
 
@@ -565,7 +616,10 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
 
     this.autoClose();
 
-    return result.map(d => new this.EntityClass(d as Partial<TEntity>));
+    if (this.EntityClass == null) {
+      return result.map(d => new this.EntityClass(d as Partial<TEntity>));
+    }
+    return result as TEntity[];
   }
 
   /**
@@ -638,6 +692,10 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     this.autoClose();
 
     if (!result) return null;
-    return new this.EntityClass(result as Partial<TEntity>);
+
+    if (this.EntityClass) {
+      return new this.EntityClass(result as Partial<TEntity>);
+    }
+    return result as TEntity;
   }
 }

@@ -16,9 +16,10 @@ async function dropCollections() {
 }
 
 function newUserRepository() {
-  return new MongoRepository<UserOid>(UserOid, {
+  return new MongoRepository({
     db,
     logLevel: LogLevel.Error,
+    EntityClass: UserOid,
   });
 }
 
@@ -45,7 +46,8 @@ describe('MongoRepository', () => {
 
   test('wrong initialization', () => {
     const t = () => {
-      new MongoRepository<UserClonable>(UserClonable, {
+      new MongoRepository({
+        EntityClass: UserClonable,
         db,
         logLevel: LogLevel.Error,
       });
@@ -252,7 +254,8 @@ describe('MongoRepository', () => {
   });
 
   test('deleteOneById', async () => {
-    const repository = new MongoRepository<UserOid>(UserOid, {
+    const repository = new MongoRepository({
+      EntityClass: UserOid,
       db,
       logLevel: LogLevel.Error,
       softDelete: false,
@@ -270,7 +273,8 @@ describe('MongoRepository', () => {
   });
 
   test('deleteOne', async () => {
-    const repository = new MongoRepository<UserOid>(UserOid, {
+    const repository = new MongoRepository({
+      EntityClass: UserOid,
       db,
       logLevel: LogLevel.Error,
       softDelete: false,
