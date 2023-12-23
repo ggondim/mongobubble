@@ -1,6 +1,6 @@
 {
   "name": "mongobubble",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "🍃🫧A MongoDB framework for Node.js and TypeScript, without the need of explict schema modeling. Features include versioning, JSON Schema validation, JSON Patch, lifecycle and many more.",
   "readme": "README.md",
   "main": "dist/index.js",
@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/ggondim/mongobubble#readme",
   "dependencies": {
-    "@mongobubble/core": "2.0.2",
+    "@mongobubble/core": "2.0.3",
     "@mongobubble/online-archive": "1.0.6",
     "@mongobubble/validator-tsed": "1.0.2",
     "bson": "^6.2.0",

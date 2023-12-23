@@ -225,6 +225,13 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     this.client = client;
     this.db = client.db(this.dbName);
     this.collection = this.db.collection(this.collectionName);
+
+    if (!this.db) {
+      throw new Error(`[MongoRepository] Database ${this.dbName} not found.`);
+    }
+    if (!this.collection) {
+      throw new Error(`[MongoRepository] Collection ${this.collectionName} not found.`);
+    }
   }
 
   protected autoClose(): void {
@@ -496,13 +503,18 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
     await this.ensureDbAndCollection();
 
     if (!document._id && options?.upsert) {
+      // there is a conflict between enforce developer to use EntityClass with an identity
+      // factory and the need to upsert a document without an identity from external sources
+      // that don't know the identity factory nor the entity class
+      // TODO: try to automatically generate an identity for the document if EntityClasss is
+      //  present and the document has no identity
       throw new Error('Upserting a document with no _id will insert a new document with a null'
         + ' _id. Try to use insertOne instead.');
     } else if (!document._id) {
       throw new Error('Replacing a document with no _id could lead to a data loss.');
     }
 
-    if (this.validator && this.schema) {
+    if (this.validator && this.schema && this.EntityClass) {
       this.validator.validate(document, {
         schema: this.schema,
         entityClass: this.EntityClass,
@@ -616,7 +628,7 @@ export default class MongoRepository<TEntity> implements IRepository<TEntity> {
 
     this.autoClose();
 
-    if (this.EntityClass == null) {
+    if (this.EntityClass) {
       return result.map(d => new this.EntityClass(d as Partial<TEntity>));
     }
     return result as TEntity[];

@@ -46,6 +46,7 @@ export default class MongoBubble<
     pipeline = [] as Document[],
     postPipeline = [] as Document[],
   ): Promise<TEntity[] | PreventedResult> {
+    await this.ensureDbAndCollection();
     return this.list([
       ...pipeline,
       {
@@ -70,6 +71,7 @@ export default class MongoBubble<
     pipeline = [] as Document[],
     postPipeline = [] as Document[],
   ): Promise<TEntity[] | PreventedResult> {
+    await this.ensureDbAndCollection();
     let collection: Collection<TEntity>;
 
     if (this.manager) {
@@ -121,6 +123,8 @@ export default class MongoBubble<
     pipeline = [] as Document[],
     postPipeline = [] as Document[],
   ): Promise<TEntity[] | PreventedResult> {
+    await this.ensureDbAndCollection();
+
     let collection: Collection<TEntity>;
 
     if (this.manager) {
