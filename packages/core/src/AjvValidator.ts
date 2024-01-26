@@ -1,5 +1,6 @@
 import type { Document } from 'bson';
 import Ajv from 'ajv';
+import ajvKeywords from 'ajv-keywords';
 import IRepositoryValidator, { Constructor } from './IRepositoryValidator';
 
 export class AjvValidatorClass implements IRepositoryValidator {
@@ -10,6 +11,7 @@ export class AjvValidatorClass implements IRepositoryValidator {
       coerceTypes: true,
       useDefaults: true,
     });
+    ajvKeywords(this.ajv);
   }
 
   validate(document: Document, { schema }: {
